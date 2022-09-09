@@ -403,6 +403,7 @@ private:
     int                         num_gpu_start;
     int                         num_scales;
     float                       scale_gap;
+    float                       net_input_size_dynamic_behavior;
     int                         keypoint_scale;
     bool                        heatmaps_add_parts;
     bool                        heatmaps_add_bkg;
@@ -454,6 +455,7 @@ public:
         model_name = rf.check("model_name", yarp::os::Value("BODY_25"), "Model to be used e.g. COCO, MPI, MPI_4_layers. (string)").asString();
         model_folder = rf.check("model_folder", yarp::os::Value("/models"), "Folder where the pose models (COCO and MPI) are located. (string)").asString();
         net_resolution = rf.check("net_resolution", yarp::os::Value("656x368"), "The resolution of the net, multiples of 16. (string)").asString();
+        net_input_size_dynamic_behavior = rf.check("net_input_dynamic_behavior", yarp::os::Value(1), "Indicates how to handle dynamic behaviour.(float)").asFloat64();
         img_resolution = rf.check("img_resolution", yarp::os::Value("320x240"), "The resolution of the image (display and output). (string)").asString();
         num_gpu = rf.check("num_gpu", yarp::os::Value(1), "The number of GPU devices to use.(int)").asInt32();
         num_gpu_start = rf.check("num_gpu_start", yarp::os::Value(0), "The GPU device start number.(int)").asInt32();
@@ -538,10 +540,13 @@ public:
         auto outputSize = op::flagsToPoint(op::String(img_resolution), op::String(img_resolution));
         // netInputSize
         auto netInputSize = op::flagsToPoint(op::String(net_resolution), op::String(net_resolution));
+        
+        auto netInputSizeDynamicBehavior = net_input_size_dynamic_behavior;
         //pose model
         op::PoseModel poseModel = op::flagsToPoseModel(op::String(model_name));
         // scaleMode
         op::ScaleMode keypointScale = op::flagsToScaleMode(keypoint_scale);
+        
         // handNetInputSize
         auto handNetInputSize = op::flagsToPoint(op::String(hand_net_resolution), op::String(hand_net_resolution));
 
@@ -557,7 +562,7 @@ public:
 
         const auto multipleView = (flags_3d || views_3d > 1);
 
-        const op::WrapperStructPose wrapperStructPose{pose_mode_body, netInputSize, outputSize, keypointScale, num_gpu, num_gpu_start, num_scales, scale_gap, op::flagsToRenderMode(render_pose, multipleView), poseModel, !disable_blending, (float)alpha_pose, (float)alpha_heatmap, part_to_show, op::String(model_folder), heatMapTypes, heatMapsScaleMode, part_candidates, (float)render_threshold, number_people_max, false, -1., op::String(""), op::String(""), 0., false } ;
+        const op::WrapperStructPose wrapperStructPose{pose_mode_body, netInputSize, netInputSizeDynamicBehavior, outputSize, keypointScale, num_gpu, num_gpu_start, num_scales, scale_gap, op::flagsToRenderMode(render_pose, multipleView), poseModel, !disable_blending, (float)alpha_pose, (float)alpha_heatmap, part_to_show, op::String(model_folder), heatMapTypes, heatMapsScaleMode, part_candidates, (float)render_threshold, number_people_max, false, -1., op::String(""), op::String(""), 0., false } ;
 
         // Hand configuration
         const auto handDetector = op::flagsToDetector(0);
